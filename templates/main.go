@@ -6,9 +6,15 @@ package main
 import (
 	"context"
 
+    {{- if .Single }}
+	"{{.Project}}/internal/api"
+	"{{.Project}}/internal/conf"
+	"{{.Project}}/internal/service"
+	{{- else }}
 	"{{.Project}}/internal/{{.Name}}/api"
 	"{{.Project}}/internal/{{.Name}}/conf"
 	"{{.Project}}/internal/{{.Name}}/service"
+	{{- end }}
 	"{{.Project}}/pkg/rest"
 
 	"github.com/gin-gonic/gin"

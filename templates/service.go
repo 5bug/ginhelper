@@ -37,7 +37,11 @@ const SvcFullTpl = `
 package service
 
 import (
+	{{- if .Single }}
+	"{{.App.Project}}/internal/api"
+	{{- else }}
 	"{{.App.Project}}/internal/{{.App.Name}}/api"
+	{{- end }}
 	"{{.App.Project}}/pkg/rest"
 )
 

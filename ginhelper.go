@@ -21,16 +21,26 @@ import (
 )
 
 // CreateApp create an app
-func CreateApp(rootDir, project, appName string) (err error) {
+func CreateApp(rootDir, project, appName string, single bool) (err error) {
+	dir := fmt.Sprintf("internal/%s/api", strings.ToLower(appName))
+	if single {
+		dir = "internal/api"
+	}
 	app := App{
+		Single:  single,
 		Project: project,
 		Name:    strings.ToLower(appName),
 		Service: cases.Title(language.Und, cases.NoLower).String(appName),
 		RootDir: rootDir,
-		APIDir:  path.Join(rootDir, fmt.Sprintf("internal/%s/api", strings.ToLower(appName))),
+		APIDir:  path.Join(rootDir, dir),
 	}
-	for k, v := range appfiles {
-		destFile := path.Join(app.RootDir, fmt.Sprintf(k, app.Name))
+	for k, v := range app.appfiles() {
+		var destFile string
+		if single {
+			destFile = path.Join(app.RootDir, k)
+		} else {
+			destFile = path.Join(app.RootDir, fmt.Sprintf(k, app.Name))
+		}
 		if ok, _ := PathExists(destFile); !ok {
 			if err = writeOneFile(app, v, destFile); err != nil {
 				return
@@ -44,7 +54,7 @@ func CreateApp(rootDir, project, appName string) (err error) {
 			return
 		}
 	}
-	if err = UpdateAPI(rootDir, project, appName); err != nil {
+	if err = UpdateAPI(rootDir, project, appName, single); err != nil {
 		return
 	}
 	return
@@ -58,13 +68,23 @@ func AppExist(rootDir, appName string) (ok bool) {
 }
 
 // UpdateAPI  update api
-func UpdateAPI(rootDir, project, appName string) (err error) {
+func UpdateAPI(rootDir, project, appName string, single bool) (err error) {
+	dir := fmt.Sprintf("internal/%s", strings.ToLower(appName))
+	// 判断是否符合single模式,若存在internal/{app}目录则认为是多app模式
+	if ok, _ := PathExists(dir); single == ok {
+		err = errors.New("App模式不相符，请确认-s参数是否正确")
+		return
+	}
+	if single {
+		dir = "internal"
+	}
 	app := App{
+		Single:  single,
 		Project: project,
 		Name:    strings.ToLower(appName),
 		Service: strings.ReplaceAll(cases.Title(language.Und, cases.NoLower).String(appName), "-", ""),
 		RootDir: rootDir,
-		APIDir:  path.Join(rootDir, fmt.Sprintf("internal/%s/api", strings.ToLower(appName))),
+		APIDir:  path.Join(rootDir, dir+"/api"),
 	}
 	requestMap, err := readRequests(app.APIDir)
 	if err != nil {
@@ -72,6 +92,7 @@ func UpdateAPI(rootDir, project, appName string) (err error) {
 	}
 	value := RenderValue{
 		App:      app,
+		Single:   single,
 		Requests: requestMap.Requests(),
 	}
 	// 创建handlers.go
@@ -85,10 +106,11 @@ func UpdateAPI(rootDir, project, appName string) (err error) {
 	// 创建service文件
 	for group, requests := range requestMap {
 		value = RenderValue{
+			Single:   single,
 			App:      app,
 			Requests: requests,
 		}
-		destFile := path.Join(app.RootDir, fmt.Sprintf("/internal/%s/service/%s.go", app.Name, group))
+		destFile := path.Join(app.RootDir, fmt.Sprintf("/%s/service/%s.go", dir, group))
 		if ok, _ := PathExists(destFile); !ok {
 			if err = writeOneFile(value, templates.SvcFullTpl, destFile); err != nil {
 				return

@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// go install github.com/go-bindata/go-bindata/...
+// go install github.com/go-bindata/go-bindata@latest
 // go-bindata pkg/*/**
 
 func readProject() (project, rootDir string) {
@@ -61,6 +61,7 @@ func findModFile() (modFile, rootDir string, ok bool) {
 
 func main() {
 	appName := ""
+	single := false
 	project, rootDir := readProject()
 	cmdCreate := &cobra.Command{
 		Use:   "new",
@@ -105,13 +106,14 @@ func main() {
 					return
 				}
 			}
-			if err := CreateApp(rootDir, project, appName); err != nil {
+			if err := CreateApp(rootDir, project, appName, single); err != nil {
 				logrus.Fatal(err)
 			}
 		},
 	}
 	cmdCreate.Flags().StringVarP(&project, "project", "p", project, "project name")
 	cmdCreate.Flags().StringVarP(&appName, "appName", "a", "", "app name")
+	cmdCreate.Flags().BoolVarP(&single, "single", "s", false, "single app")
 
 	cmdUpdate := &cobra.Command{
 		Use:   "update",
@@ -134,12 +136,13 @@ func main() {
 					return
 				}
 			}
-			if err := UpdateAPI(rootDir, project, appName); err != nil {
+			if err := UpdateAPI(rootDir, project, appName, single); err != nil {
 				logrus.Fatal(err)
 			}
 		},
 	}
 	cmdUpdate.Flags().StringVarP(&appName, "appName", "a", "", "app name")
+	cmdUpdate.Flags().BoolVarP(&single, "single", "s", false, "single app")
 
 	rootCmd := &cobra.Command{
 		Use:     "ginhelper",
