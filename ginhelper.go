@@ -66,10 +66,6 @@ func UpdateAPI(rootDir, project, appName string) (err error) {
 		RootDir: rootDir,
 		APIDir:  path.Join(rootDir, fmt.Sprintf("internal/%s/api", strings.ToLower(appName))),
 	}
-	requestMap, err := readRequests(app.APIDir)
-	if err != nil {
-		return
-	}
 	value := RenderValue{
 		App:      app,
 		Requests: requestMap.Requests(),
